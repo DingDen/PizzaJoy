@@ -125,7 +125,7 @@ public class StockServiceImpl implements IStockService, IMediatorEmitter, IObser
         int currentStockWeight = getCurrentStockWeightProperty().getValue();
         int totalStock = stockState.getTotalStockWeightObservable().getValue();
 
-        if (stockWeightGained + currentStockWeight == totalStock) {
+        if (currentStockWeight == totalStock) {
             sendEvent(new NotifyEvent(NotifyType.MAXSTOCKWEIGHT));
             return;
         
