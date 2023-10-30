@@ -123,12 +123,36 @@ public class StockServiceImpl implements IStockService, IMediatorEmitter, IObser
         int itemMaxWeight = ApplicationProperties.itemMaxWeight;
         int stockWeightGained = getTotalWeightGainedFromRestock(supplierModel);
         int currentStockWeight = getCurrentStockWeightProperty().getValue();
+        int totalStock = stockState.getTotalStockWeightObservable().getValue();
 
-        if (stockWeightGained + currentStockWeight > stockState.getTotalStockWeightObservable().getValue()) {
+        if (stockWeightGained + currentStockWeight == totalStock) {
             sendEvent(new NotifyEvent(NotifyType.MAXSTOCKWEIGHT));
             return;
-        }
+        
+        } else if(stockWeightGained + currentStockWeight > totalStock) {
+            int valueToRestock = totalStock % currentStockWeight;
+            
+            for (int j = 0; j < itemStockWrapperObservableList.size(); j++) {
+                ItemStockModel itemStockModel = itemStockWrapperObservableList.get(j);
+                
+                int weight = itemStockModel.getItemModel().getWeight(); 
+                int quantity = itemMaxWeight - weight + 1;
+                int itemStockValue = quantity * weight;
 
+                if(valueToRestock % itemStockValue == valueToRestock) {
+                    itemStockModel.incrementQuantity(valueToRestock);
+                } else {
+                    itemStockModel.incrementQuantity(quantity);
+                }
+                itemStockWrapperObservableList.set(j, itemStockModel);
+                
+                valueToRestock -= itemStockValue;
+                if(valueToRestock <= 0) {
+                    getCurrentStockWeightProperty().setValue(totalStock);
+                    return;
+                }
+            }
+        }
         for (int i = 0; i < itemStockWrapperObservableList.size(); i++) {
             ItemStockModel itemStockModel = itemStockWrapperObservableList.get(i);
 
